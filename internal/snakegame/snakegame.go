@@ -24,7 +24,7 @@ func CreateSnakeGame(h int, w int) *SnakeGame {
 
 	sg.score = 0
 
-	sg.pauseTime = 850
+	sg.pauseTime = 600
 	sg.board = make([][]rune, h)
 	for i := range sg.board {
 		sg.board[i] = make([]rune, w)
@@ -44,7 +44,7 @@ type SnakeGame struct {
 	score     int
 }
 
-func (sg *SnakeGame) moving(turn <-chan int) {
+func (sg *SnakeGame) moving(turn <-chan int, exit chan<- struct{}) {
 	select {
 	case sg.snake.currentDirectional = <-turn:
 	default:
@@ -66,11 +66,11 @@ func (sg *SnakeGame) moving(turn <-chan int) {
 	default:
 		panic("Variable currentDirectional has an invalid value")
 	}
-
+	sg.crash(exit)
 	sg.wallInteraction()
 }
 
-func (p *SnakeGame) Run(turn <-chan int, exit <-chan struct{}) int {
+func (p *SnakeGame) Run(turn <-chan int, exit chan struct{}) int {
 
 	for {
 		p.updateBoard()
@@ -83,7 +83,7 @@ func (p *SnakeGame) Run(turn <-chan int, exit <-chan struct{}) int {
 		}
 
 		time.Sleep(time.Duration(p.pauseTime) * time.Millisecond)
-		p.moving(turn)
+		p.moving(turn, exit)
 		p.foodInteraction()
 		p.clean()
 	}
@@ -164,6 +164,15 @@ func (p *SnakeGame) wallInteraction() {
 	}
 }
 
+func (p *SnakeGame) crash(exit chan<- struct{}) {
+	for i := range p.snake.body {
+		if (p.snake.body[kHeadIndex].x == p.snake.body[i].x && kHeadIndex != i) && (p.snake.body[kHeadIndex].y == p.snake.body[i].y && kHeadIndex != i) {
+			exit <- struct{}{}
+		}
+	}
+
+}
+
 type point struct {
 	x int
 	y int
@@ -176,6 +185,9 @@ func (p *SnakeGame) UserControl(turn chan<- int, exit chan<- struct{}) {
 	if err != nil {
 		panic(err)
 	}
+	defer func() {
+		_ = keyboard.Close()
+	}()
 
 	for {
 		event := <-keyData
@@ -185,13 +197,21 @@ func (p *SnakeGame) UserControl(turn chan<- int, exit chan<- struct{}) {
 
 		switch event.Key {
 		case keyboard.KeyArrowUp:
-			turn <- kUp
+			if p.snake.currentDirectional == kRight || p.snake.currentDirectional == kLeft {
+				turn <- kUp
+			}
 		case keyboard.KeyArrowRight:
-			turn <- kRight
+			if p.snake.currentDirectional == kUp || p.snake.currentDirectional == kDown {
+				turn <- kRight
+			}
 		case keyboard.KeyArrowDown:
-			turn <- kDown
+			if p.snake.currentDirectional == kRight || p.snake.currentDirectional == kLeft {
+				turn <- kDown
+			}
 		case keyboard.KeyArrowLeft:
-			turn <- kLeft
+			if p.snake.currentDirectional == kUp || p.snake.currentDirectional == kDown {
+				turn <- kLeft
+			}
 		case keyboard.KeyEsc:
 			exit <- struct{}{}
 			return
