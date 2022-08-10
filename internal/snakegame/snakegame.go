@@ -21,8 +21,10 @@ func CreateSnakeGame(h int, w int) *SnakeGame {
 	rand.Seed(time.Now().UnixNano())
 
 	var sg SnakeGame
-
+	sg.exit = make(chan struct{}, 1)
+	sg.turn = make(chan DirectionalType, 1)
 	sg.score = 0
+	sg.crashed = false
 
 	sg.pauseTime = 600
 	sg.board = make([][]rune, h)
@@ -33,6 +35,7 @@ func CreateSnakeGame(h int, w int) *SnakeGame {
 	sg.clean()
 	sg.initSnake()
 	sg.foodGenerator()
+
 	return &sg
 }
 
@@ -42,11 +45,15 @@ type SnakeGame struct {
 	food      point
 	pauseTime int
 	score     int
+	crashed   bool
+
+	exit chan struct{}
+	turn chan DirectionalType
 }
 
-func (sg *SnakeGame) moving(turn <-chan int, exit chan<- struct{}) {
+func (sg *SnakeGame) moving() bool {
 	select {
-	case sg.snake.currentDirectional = <-turn:
+	case sg.snake.currentDirectional = <-sg.turn:
 	default:
 	}
 
@@ -66,30 +73,38 @@ func (sg *SnakeGame) moving(turn <-chan int, exit chan<- struct{}) {
 	default:
 		panic("Variable currentDirectional has an invalid value")
 	}
-	sg.crash(exit)
+	sg.crash()
 	sg.wallInteraction()
+	return false
 }
 
-func (p *SnakeGame) Run(turn <-chan int, exit chan struct{}) int {
+func (p *SnakeGame) Run() int {
 
 	for {
 		p.updateBoard()
 		p.showBoard()
 
 		select {
-		case <-exit:
+		case <-p.exit:
 			return p.score
 		default:
 		}
 
 		time.Sleep(time.Duration(p.pauseTime) * time.Millisecond)
-		p.moving(turn, exit)
+
+		p.moving()
+		if p.crashed == true {
+			return p.score
+		}
+
 		p.foodInteraction()
 		p.clean()
 	}
 
 }
 
+// this method should always be called ONLY after all objects were printed on the board
+// (otherwise, food could be generated on the non-empty cell).
 func (p *SnakeGame) foodGenerator() {
 	x := rand.Intn(len(p.board))
 	y := rand.Intn(len(p.board[0]))
@@ -136,7 +151,7 @@ func (p *SnakeGame) clean() {
 func (p *SnakeGame) foodInteraction() {
 	if p.snake.isFoodEaten {
 		p.score += 1
-		p.snake.body = append(p.snake.body, p.snake.tail)
+		p.snake.body = append(p.snake.body, p.snake.body[len(p.snake.body)-1])
 		p.snake.isFoodEaten = false
 	}
 	if p.board[p.snake.body[kHeadIndex].x][p.snake.body[kHeadIndex].y] == kApple {
@@ -144,7 +159,6 @@ func (p *SnakeGame) foodInteraction() {
 		p.pauseTime += 50
 		p.foodGenerator()
 	}
-	p.snake.tail = p.snake.body[len(p.snake.body)-1]
 }
 
 func (p *SnakeGame) wallInteraction() {
@@ -164,13 +178,16 @@ func (p *SnakeGame) wallInteraction() {
 	}
 }
 
-func (p *SnakeGame) crash(exit chan<- struct{}) {
+func (p *SnakeGame) crash() {
 	for i := range p.snake.body {
-		if (p.snake.body[kHeadIndex].x == p.snake.body[i].x && kHeadIndex != i) && (p.snake.body[kHeadIndex].y == p.snake.body[i].y && kHeadIndex != i) {
-			exit <- struct{}{}
+		if p.isFecedBody(i) {
+			p.crashed = true
 		}
 	}
+}
 
+func (p *SnakeGame) isFecedBody(i int) bool {
+	return (p.snake.body[kHeadIndex].x == p.snake.body[i].x && kHeadIndex != i) && (p.snake.body[kHeadIndex].y == p.snake.body[i].y)
 }
 
 type point struct {
@@ -178,16 +195,14 @@ type point struct {
 	y int
 }
 
-func (p *SnakeGame) UserControl(turn chan<- int, exit chan<- struct{}) {
+func (p *SnakeGame) UserControl() {
 
 	keyData, err := keyboard.GetKeys(10)
 
 	if err != nil {
 		panic(err)
 	}
-	defer func() {
-		_ = keyboard.Close()
-	}()
+	defer keyboard.Close()
 
 	for {
 		event := <-keyData
@@ -198,22 +213,22 @@ func (p *SnakeGame) UserControl(turn chan<- int, exit chan<- struct{}) {
 		switch event.Key {
 		case keyboard.KeyArrowUp:
 			if p.snake.currentDirectional == kRight || p.snake.currentDirectional == kLeft {
-				turn <- kUp
+				p.turn <- kUp
 			}
 		case keyboard.KeyArrowRight:
 			if p.snake.currentDirectional == kUp || p.snake.currentDirectional == kDown {
-				turn <- kRight
+				p.turn <- kRight
 			}
 		case keyboard.KeyArrowDown:
 			if p.snake.currentDirectional == kRight || p.snake.currentDirectional == kLeft {
-				turn <- kDown
+				p.turn <- kDown
 			}
 		case keyboard.KeyArrowLeft:
 			if p.snake.currentDirectional == kUp || p.snake.currentDirectional == kDown {
-				turn <- kLeft
+				p.turn <- kLeft
 			}
 		case keyboard.KeyEsc:
-			exit <- struct{}{}
+			p.exit <- struct{}{}
 			return
 		default:
 		}
