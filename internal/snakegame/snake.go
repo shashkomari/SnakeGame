@@ -2,10 +2,17 @@ package snakegame
 
 import "math/rand"
 
+type DirectionalType int
+
 const (
-	kUp, kDown, kRight, kLeft = 0, 1, 2, 3
-	kHeadIndex                = 0
+	kUp DirectionalType = iota
+	kDown
+	kRight
+	kLeft
+	kLastElement
 )
+
+const kHeadIndex = 0
 
 func (sg *SnakeGame) initSnake() {
 	startCoordinate := point{(len(sg.board) / 2), (len(sg.board[0]) / 2)}
@@ -13,14 +20,10 @@ func (sg *SnakeGame) initSnake() {
 	sg.snake.body = make([]point, 0, 10)
 	sg.snake.body = append(sg.snake.body, startCoordinate)
 
-	sg.snake.tail = sg.snake.body[len(sg.snake.body)-1]
-
-	sg.snake.currentDirectional = rand.Intn(4)
+	sg.snake.currentDirectional = DirectionalType(rand.Int() % int(kLastElement))
 }
 
 type snake struct {
-	isFoodEaten        bool
 	body               []point
-	tail               point
-	currentDirectional int
+	currentDirectional DirectionalType
 }

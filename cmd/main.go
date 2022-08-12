@@ -40,10 +40,9 @@ func main() {
 	config, _ := LoadConfiguration("config.json")
 
 	var sg = snakegame.CreateSnakeGame(config.Board.Hight, config.Board.Wight)
-	exit := make(chan struct{}, 1)
-	turn := make(chan int, 1)
 
-	go sg.UserControl(turn, exit)
-	score := sg.Run(turn, exit)
+	go sg.UserControl()
+	score := sg.Run()
+
 	fmt.Printf("Game Over!\nScore: %d\n", score)
 }
