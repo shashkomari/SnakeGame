@@ -78,7 +78,6 @@ func (sg *SnakeGame) moving() {
 }
 
 func (p *SnakeGame) Run() int {
-
 	for {
 		p.updateBoard()
 		p.showBoard()
@@ -99,7 +98,6 @@ func (p *SnakeGame) Run() int {
 		p.foodInteraction()
 		p.clean()
 	}
-
 }
 
 // This method should always be called ONLY after all objects were printed on the board
