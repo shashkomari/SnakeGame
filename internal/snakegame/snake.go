@@ -9,6 +9,7 @@ const (
 	kDown
 	kRight
 	kLeft
+	kLastElement
 )
 
 const kHeadIndex = 0
@@ -19,7 +20,7 @@ func (sg *SnakeGame) initSnake() {
 	sg.snake.body = make([]point, 0, 10)
 	sg.snake.body = append(sg.snake.body, startCoordinate)
 
-	sg.snake.currentDirectional = DirectionalType(rand.Int() % 4)
+	sg.snake.currentDirectional = DirectionalType(rand.Int() % int(kLastElement))
 }
 
 type snake struct {

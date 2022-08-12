@@ -43,7 +43,7 @@ type SnakeGame struct {
 	board     [][]rune
 	snake     snake
 	food      point
-	pauseTime int
+	pauseTime float32
 	score     int
 	crashed   bool
 
@@ -51,7 +51,7 @@ type SnakeGame struct {
 	turn chan DirectionalType
 }
 
-func (sg *SnakeGame) moving() bool {
+func (sg *SnakeGame) moving() {
 	select {
 	case sg.snake.currentDirectional = <-sg.turn:
 	default:
@@ -73,9 +73,8 @@ func (sg *SnakeGame) moving() bool {
 	default:
 		panic("Variable currentDirectional has an invalid value")
 	}
-	sg.crash()
+	sg.checkCrash()
 	sg.wallInteraction()
-	return false
 }
 
 func (p *SnakeGame) Run() int {
@@ -93,7 +92,7 @@ func (p *SnakeGame) Run() int {
 		time.Sleep(time.Duration(p.pauseTime) * time.Millisecond)
 
 		p.moving()
-		if p.crashed == true {
+		if p.crashed {
 			return p.score
 		}
 
@@ -103,8 +102,7 @@ func (p *SnakeGame) Run() int {
 
 }
 
-// this method should always be called ONLY after all objects were printed on the board
-// (otherwise, food could be generated on the non-empty cell).
+// This method should always be called ONLY after all objects were printed on the board
 func (p *SnakeGame) foodGenerator() {
 	x := rand.Intn(len(p.board))
 	y := rand.Intn(len(p.board[0]))
@@ -118,7 +116,7 @@ func (p *SnakeGame) foodGenerator() {
 
 // Add snake and food to board matrix
 func (p *SnakeGame) updateBoard() {
-	for index := range p.snake.body {
+	for index := len(p.snake.body) - 1; index >= kHeadIndex; index-- {
 		if index == kHeadIndex {
 			p.board[p.snake.body[index].x][p.snake.body[index].y] = kHead
 		} else {
@@ -149,14 +147,10 @@ func (p *SnakeGame) clean() {
 }
 
 func (p *SnakeGame) foodInteraction() {
-	if p.snake.isFoodEaten {
+	if p.board[p.snake.body[kHeadIndex].x][p.snake.body[kHeadIndex].y] == kApple {
 		p.score += 1
 		p.snake.body = append(p.snake.body, p.snake.body[len(p.snake.body)-1])
-		p.snake.isFoodEaten = false
-	}
-	if p.board[p.snake.body[kHeadIndex].x][p.snake.body[kHeadIndex].y] == kApple {
-		p.snake.isFoodEaten = true
-		p.pauseTime += 50
+		p.pauseTime *= 0.95
 		p.foodGenerator()
 	}
 }
@@ -178,16 +172,12 @@ func (p *SnakeGame) wallInteraction() {
 	}
 }
 
-func (p *SnakeGame) crash() {
+func (p *SnakeGame) checkCrash() {
 	for i := range p.snake.body {
-		if p.isFecedBody(i) {
+		if (p.snake.body[kHeadIndex].x == p.snake.body[i].x && kHeadIndex != i) && (p.snake.body[kHeadIndex].y == p.snake.body[i].y) {
 			p.crashed = true
 		}
 	}
-}
-
-func (p *SnakeGame) isFecedBody(i int) bool {
-	return (p.snake.body[kHeadIndex].x == p.snake.body[i].x && kHeadIndex != i) && (p.snake.body[kHeadIndex].y == p.snake.body[i].y)
 }
 
 type point struct {
