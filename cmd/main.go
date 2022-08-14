@@ -18,21 +18,19 @@ type Config struct {
 func LoadConfiguration(filename string) (Config, error) {
 	var config Config
 
-	// configFile, err := os.Create("config.json")
 	configFile, err := os.Open(filename)
 
 	if err != nil {
-		return config, err
+		configFile, err = os.Create(filename)
+		jsonFile := json.NewEncoder(configFile)
+		config.Board.Hight = 10
+		config.Board.Wight = 20
+		err = jsonFile.Encode(&config)
+	} else {
+		defer configFile.Close()
+		jsonParser := json.NewDecoder(configFile)
+		err = jsonParser.Decode(&config)
 	}
-
-	defer configFile.Close()
-	// jsonFile := json.NewEncoder(configFile)
-
-	jsonParser := json.NewDecoder(configFile)
-	err = jsonParser.Decode(&config)
-	// config.Board.Hight = 10
-	// config.Board.Wight = 20
-	// err = jsonFile.Encode(&config)
 	return config, err
 }
 
