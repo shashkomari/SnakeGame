@@ -24,7 +24,6 @@ func (sg *SnakeGame) initSnake() {
 }
 
 type snake struct {
-	isFoodEaten        bool
 	body               []point
 	currentDirectional DirectionalType
 }

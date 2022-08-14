@@ -127,7 +127,7 @@ func (p *SnakeGame) updateBoard() {
 func (p *SnakeGame) showBoard() {
 	for i := range p.board {
 		for j := range p.board[i] {
-			fmt.Printf("%c", p.board[i][j])
+			fmt.Printf("%c ", p.board[i][j])
 		}
 		fmt.Println()
 	}
