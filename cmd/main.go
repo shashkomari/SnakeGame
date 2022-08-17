@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"log"
 	"os"
 
 	"github.com/shashkomari/SnakeGame/internal/snakegame"
@@ -55,7 +56,7 @@ func LoadConfiguration(filename string) (*Config, error) {
 func main() {
 	config, err := LoadConfiguration(kDefoultConfigFilename)
 	if err != nil {
-		panic(err)
+		log.Fatal(err)
 	}
 	var sg = snakegame.CreateSnakeGame(config.Board.Hight, config.Board.Wight)
 
