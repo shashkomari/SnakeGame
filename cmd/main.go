@@ -9,7 +9,7 @@ import (
 	"github.com/shashkomari/SnakeGame/internal/snakegame"
 )
 
-const kTitle = "config.json"
+const kDefoultConfigFilename = "config.json"
 
 type Config struct {
 	Board struct {
@@ -53,7 +53,7 @@ func LoadConfiguration(filename string) (*Config, error) {
 }
 
 func main() {
-	config, err := LoadConfiguration(kTitle)
+	config, err := LoadConfiguration(kDefoultConfigFilename)
 	if err != nil {
 		panic(err)
 	}
