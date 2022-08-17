@@ -9,6 +9,8 @@ import (
 	"github.com/shashkomari/SnakeGame/internal/snakegame"
 )
 
+const kTitle = "config.json"
+
 type Config struct {
 	Board struct {
 		Hight int `json:"hight"`
@@ -51,8 +53,10 @@ func LoadConfiguration(filename string) (*Config, error) {
 }
 
 func main() {
-	config, _ := LoadConfiguration("config.json")
-
+	config, err := LoadConfiguration(kTitle)
+	if err != nil {
+		panic(err)
+	}
 	var sg = snakegame.CreateSnakeGame(config.Board.Hight, config.Board.Wight)
 
 	go sg.UserControl()
