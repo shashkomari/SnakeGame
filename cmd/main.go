@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"os"
 
@@ -15,23 +16,38 @@ type Config struct {
 	} `json:"board"`
 }
 
-func LoadConfiguration(filename string) (Config, error) {
+func LoadConfiguration(filename string) (*Config, error) {
 	var config Config
 
 	configFile, err := os.Open(filename)
 
-	if err != nil {
+	if errors.Is(err, os.ErrNotExist) {
 		configFile, err = os.Create(filename)
+		if err != nil {
+			return nil, err
+		}
+		defer configFile.Close()
+
 		jsonFile := json.NewEncoder(configFile)
 		config.Board.Hight = 10
 		config.Board.Wight = 20
 		err = jsonFile.Encode(&config)
+		if err != nil {
+			return nil, err
+		}
 	} else {
+		if err != nil {
+			return nil, err
+		}
 		defer configFile.Close()
+
 		jsonParser := json.NewDecoder(configFile)
 		err = jsonParser.Decode(&config)
+		if err != nil {
+			return nil, err
+		}
 	}
-	return config, err
+	return &config, nil
 }
 
 func main() {
