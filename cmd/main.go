@@ -4,13 +4,12 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"log"
 	"os"
 
 	"github.com/shashkomari/SnakeGame/internal/snakegame"
 )
 
-const kDefoultConfigFilename = "config.json"
+const kDefaultConfigFilename = "config.json"
 
 type Config struct {
 	Board struct {
@@ -54,10 +53,12 @@ func LoadConfiguration(filename string) (*Config, error) {
 }
 
 func main() {
-	config, err := LoadConfiguration(kDefoultConfigFilename)
+	config, err := LoadConfiguration(kDefaultConfigFilename)
 	if err != nil {
-		log.Fatal(err)
+		fmt.Println("failed to load configuration: ", err.Error())
+		return
 	}
+
 	var sg = snakegame.CreateSnakeGame(config.Board.Hight, config.Board.Wight)
 
 	go sg.UserControl()
