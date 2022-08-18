@@ -21,6 +21,7 @@ func CreateSnakeGame(h int, w int) *SnakeGame {
 	rand.Seed(time.Now().UnixNano())
 
 	var sg SnakeGame
+
 	sg.exit = make(chan struct{}, 1)
 	sg.turn = make(chan DirectionalType, 1)
 	sg.score = 0
@@ -73,6 +74,7 @@ func (sg *SnakeGame) moving() {
 	default:
 		panic("Variable currentDirectional has an invalid value")
 	}
+
 	sg.checkCrash()
 	sg.wallInteraction()
 }
@@ -184,7 +186,6 @@ type point struct {
 }
 
 func (p *SnakeGame) UserControl() {
-
 	keyData, err := keyboard.GetKeys(10)
 
 	if err != nil {
